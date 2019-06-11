@@ -18,7 +18,7 @@ interface IContext {
 export const huskyIdentifier = '# husky'
 
 // Experimental
-const huskyrc = '~/.huskyrc'
+const huskyrc = '.huskyrc'
 
 // Render script
 const render = ({
@@ -44,34 +44,46 @@ ${huskyIdentifier}
 
 scriptPath="${runScriptPath}.js"
 hookName=\`basename "$0"\`
+
+gitRoot="$(git rev-parse --show-toplevel)"
 gitParams="$*"
 
 debug() {
-  [ "$\{HUSKY_DEBUG\}" = "true" ] && echo "husky:debug $1"
+  [ "\${HUSKY_DEBUG}" = "true" ] && echo "husky:debug $1"
 }
 
-debug "$hookName hook started..."
-${
-  platform !== 'win32'
-    ? `
-if ! command -v node >/dev/null 2>&1; then
-  echo "Info: Can't find node in PATH, trying to find a node binary on your system"
+if [ -f ~/${huskyrc} ]; then
+  debug "source ~/${huskyrc}"
+  . ~/${huskyrc}
 fi
-`
-    : ''
-}
-if [ -f "$scriptPath" ]; then
-  # if [ -t 1 ]; then
-  #   exec < /dev/tty
-  # fi
-  if [ -f ${huskyrc} ]; then
-    debug "source ${huskyrc}"
-    . ${huskyrc}
-  fi
-  ${node} "$scriptPath" $hookName "$gitParams"
+
+if [ -f "\${gitRoot}"/${huskyrc} ]; then
+  debug "source "\${gitRoot}"/${huskyrc}"
+  . "\${gitRoot}"/${huskyrc}
+fi
+
+debug "$hookName hook started..."
+if [ "\${HUSKY_USE_YARN}" = "true" ]; then
+  yarn husky $hookName "$gitParams"
 else
-  echo "Can't find Husky, skipping $hookName hook"
-  echo "You can reinstall it using 'npm install husky --save-dev' or delete this hook"
+  ${
+    platform !== 'win32'
+      ? `
+  if ! command -v node >/dev/null 2>&1; then
+    echo "Info: Can't find node in PATH, trying to find a node binary on your system"
+  fi
+  `
+      : ''
+  }
+  if [ -f "$scriptPath" ]; then
+    # if [ -t 1 ]; then
+    #   exec < /dev/tty
+    # fi
+    ${node} "$scriptPath" $hookName "$gitParams"
+  else
+    echo "Can't find Husky, skipping $hookName hook"
+    echo "You can reinstall it using 'npm install husky --save-dev' or delete this hook"
+  fi
 fi
 `
 
