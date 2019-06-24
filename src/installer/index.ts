@@ -122,8 +122,13 @@ export function install(
   isCI: boolean,
   requireRunNodePath = require.resolve('run-node/run-node')
 ): void {
+  // @ts-ignore
+  const pnpapi: any = process.versions.pnp ? require('pnpapi') : null;
+
   // First directory containing user's package.json
-  const userPkgDir = pkgDir.sync(path.join(huskyDir, '..'))
+  const userPkgDir = pnpapi
+    ? pnpapi.getPackageInformation(pnpapi.topLevel).packageLocation
+    : pkgDir.sync(path.join(huskyDir, '..'));
 
   if (userPkgDir === undefined) {
     console.log("Can't find package.json, skipping Git hooks installation.")

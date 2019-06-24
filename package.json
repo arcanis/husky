@@ -4,6 +4,7 @@
   "description": "Prevents bad commit or push (git hooks, pre-commit/precommit, pre-push/prepush, post-merge/postmerge and all that stuff...)",
   "bin": {
     "husky": "./run.js",
+    "husky-install": "./husky.js",
     "husky-upgrade": "./lib/upgrader/bin.js"
   },
   "engines": {
