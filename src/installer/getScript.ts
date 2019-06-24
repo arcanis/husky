@@ -3,7 +3,7 @@ import os from 'os'
 import path from 'path'
 import slash from 'slash'
 
-interface IContext {
+interface Context {
   createdAt: string
   homepage: string
   node: string
@@ -30,7 +30,7 @@ const render = ({
   platform,
   runScriptPath,
   version
-}: IContext) => `#!/bin/sh
+}: Context): string => `#!/bin/sh
 ${huskyIdentifier}
 
 # Hook created by Husky
@@ -49,7 +49,10 @@ gitRoot="$(git rev-parse --show-toplevel)"
 gitParams="$*"
 
 debug() {
-  [ "\${HUSKY_DEBUG}" = "true" ] && echo "husky:debug $1"
+<<<<<<< HEAD
+  if [ "$\{HUSKY_DEBUG}" = "true" ] || [ "$\{HUSKY_DEBUG}" = "1" ]; then
+    echo "husky:debug $1"
+  fi
 }
 
 if [ -f ~/${huskyrc} ]; then
@@ -63,6 +66,12 @@ if [ -f "\${gitRoot}"/${huskyrc} ]; then
 fi
 
 debug "$hookName hook started..."
+
+if [ "$\{HUSKY_SKIP_HOOKS}" = "true" ] || [ "$\{HUSKY_SKIP_HOOKS}" = "1" ]; then
+  debug "HUSKY_SKIP_HOOKS is set to $\{HUSKY_SKIP_HOOKS}, skipping hook"
+  exit 0
+fi
+
 if [ "\${HUSKY_USE_YARN}" = "true" ]; then
   yarn husky $hookName "$gitParams"
 else
@@ -88,10 +97,11 @@ fi
 `
 
 /**
- * @param rootDir - e.g. /home/typicode/project/
- * @param huskyDir - e.g. /home/typicode/project/node_modules/husky/
- * @param requireRunNodePath - path to run-node resolved by require e.g. /home/typicode/project/node_modules/.bin/run-node
- * @param platform - platform husky installer is running on (used to produce win32 specific script)
+ * @param {string} rootDir - e.g. /home/typicode/project/
+ * @param {string} huskyDir - e.g. /home/typicode/project/node_modules/husky/
+ * @param {string} requireRunNodePath - path to run-node resolved by require e.g. /home/typicode/project/node_modules/run-node/run-node
+ * @param {string} platform - platform husky installer is running on (used to produce win32 specific script)
+ * @returns {string} script
  */
 export default function(
   rootDir: string,
@@ -99,7 +109,7 @@ export default function(
   requireRunNodePath: string,
   // Additional param used for testing only
   platform: string = os.platform()
-) {
+): string {
   const runNodePath = slash(path.relative(rootDir, requireRunNodePath))
 
   // On Windows do not rely on run-node
@@ -119,7 +129,7 @@ export default function(
     path.join(path.relative(rootDir, huskyDir), 'run')
   )
 
-  // created at
+  // Created at
   const createdAt = new Date().toLocaleString()
 
   // Render script

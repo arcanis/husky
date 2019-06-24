@@ -1,11 +1,9 @@
-import findUp from 'find-up'
 import fs from 'fs'
 import path from 'path'
 import pkgDir from 'pkg-dir'
 import getConf from '../getConf'
 import getScript from './getScript'
 import { isGhooks, isHusky, isPreCommit, isYorkie } from './is'
-import resolveGitDir from './resolveGitDir'
 
 const hookList = [
   'applypatch-msg',
@@ -29,12 +27,12 @@ const hookList = [
   'sendemail-validate'
 ]
 
-function writeHook(filename: string, script: string) {
+function writeHook(filename: string, script: string): void {
   fs.writeFileSync(filename, script, 'utf-8')
-  fs.chmodSync(filename, parseInt('0755', 8))
+  fs.chmodSync(filename, 0o0755)
 }
 
-function createHook(filename: string, script: string) {
+function createHook(filename: string, script: string): void {
   // Get name, used for logging
   const name = path.basename(filename)
 
@@ -68,8 +66,8 @@ function createHook(filename: string, script: string) {
   writeHook(filename, script)
 }
 
-function createHooks(filenames: string[], script: string) {
-  filenames.forEach(filename => createHook(filename, script))
+function createHooks(filenames: string[], script: string): void {
+  filenames.forEach((filename: string): void => createHook(filename, script))
 }
 
 function canRemove(filename: string): boolean {
@@ -81,17 +79,17 @@ function canRemove(filename: string): boolean {
   return false
 }
 
-function removeHook(filename: string) {
+function removeHook(filename: string): void {
   fs.unlinkSync(filename)
 }
 
-function removeHooks(filenames: string[]) {
+function removeHooks(filenames: string[]): void {
   filenames.filter(canRemove).forEach(removeHook)
 }
 
 // This prevents the case where someone would want to debug a node_module that has
 // husky as devDependency and run npm install from node_modules directory
-function isInNodeModules(dir: string) {
+function isInNodeModules(dir: string): boolean {
   // INIT_CWD holds the full path you were in when you ran npm install (supported also by yarn and pnpm)
   // See https://docs.npmjs.com/cli/run-script
   if (process.env.INIT_CWD) {
@@ -104,21 +102,26 @@ function isInNodeModules(dir: string) {
 
 function getHooks(gitDir: string): string[] {
   const gitHooksDir = path.join(gitDir, 'hooks')
-  return hookList.map(hookName => path.join(gitHooksDir, hookName))
+  return hookList.map((hookName: string): string =>
+    path.join(gitHooksDir, hookName)
+  )
 }
 
 /**
+ * @param topLevel - as returned by git --rev-parse
+ * @param gitDir - as returned by git --rev-parse
  * @param huskyDir - e.g. /home/typicode/project/node_modules/husky/
- * @param requireRunNodePath - path to run-node resolved by require e.g. /home/typicode/project/node_modules/.bin/run-node
  * @param isCI - true if running in CI
+ * @param requireRunNodePath - path to run-node resolved by require e.g. /home/typicode/project/node_modules/run-node/run-node
  */
+// eslint-disable-next-line max-params
 export function install(
+  topLevel: string,
+  gitDir: string,
   huskyDir: string,
-  requireRunNodePath: string = require.resolve('.bin/run-node'),
-  isCI: boolean
-) {
-  console.log('husky > setting up git hooks')
-
+  isCI: boolean,
+  requireRunNodePath = require.resolve('run-node/run-node')
+): void {
   // First directory containing user's package.json
   const userPkgDir = pkgDir.sync(path.join(huskyDir, '..'))
 
@@ -132,32 +135,12 @@ export function install(
 
   // Get conf from package.json or .huskyrc
   const conf = getConf(userPkgDir)
-  // Get directory containing .git directory or in the case of Git submodules, the .git file
-  const gitDirOrFile = findUp.sync('.git', { cwd: userPkgDir })
-  // Resolve git directory (e.g. .git/ or .git/modules/path/to/submodule)
-  const resolvedGitDir = resolveGitDir(userPkgDir)
 
   // Checks
   if (process.env.HUSKY_SKIP_INSTALL === 'true') {
     console.log(
       "HUSKY_SKIP_INSTALL environment variable is set to 'true',",
       'skipping Git hooks installation.'
-    )
-    return
-  }
-
-  if (gitDirOrFile === null) {
-    console.log("Can't find .git, skipping Git hooks installation.")
-    console.log(
-      "Please check that you're in a cloned repository",
-      "or run 'git init' to create an empty Git repository and reinstall husky."
-    )
-    return
-  }
-
-  if (resolvedGitDir === null) {
-    console.log(
-      "Can't find resolved .git directory, skipping Git hooks installation."
     )
     return
   }
@@ -174,28 +157,28 @@ export function install(
     return
   }
 
-  // Create hooks directory if doesn't exist
-  if (!fs.existsSync(path.join(resolvedGitDir, 'hooks'))) {
-    fs.mkdirSync(path.join(resolvedGitDir, 'hooks'))
+  // Create hooks directory if it doesn't exist
+  const gitHooksDir = path.join(gitDir, 'hooks')
+  if (!fs.existsSync(gitHooksDir)) {
+    fs.mkdirSync(gitHooksDir)
   }
 
-  // Create hooks
-  // Get root dir based on the first .git directory of file found
-  const rootDir = path.dirname(gitDirOrFile)
-
-  const hooks = getHooks(resolvedGitDir)
-  const script = getScript(rootDir, huskyDir, requireRunNodePath)
+  const hooks = getHooks(gitDir)
+  const script = getScript(topLevel, huskyDir, requireRunNodePath)
   createHooks(hooks, script)
 
-  console.log(`husky > done`)
+  console.log(`husky > Done`)
+  console.log(
+    'husky > Like husky? You can support the project on Open Collective:'
+  )
+  console.log(
+    'husky > \x1b[36m%s\x1b[0m 🐕',
+    'https://www.opencollective.com/husky'
+  )
 }
 
-export function uninstall(huskyDir: string) {
-  console.log('husky > uninstalling git hooks')
-  const userPkgDir = pkgDir.sync(path.join(huskyDir, '..'))
-  const resolvedGitDir = resolveGitDir(userPkgDir)
-
-  if (resolvedGitDir === null) {
+export function uninstall(gitDir: string, huskyDir: string): void {
+  if (gitDir === null) {
     console.log(
       "Can't find resolved .git directory, skipping Git hooks uninstallation."
     )
@@ -210,8 +193,8 @@ export function uninstall(huskyDir: string) {
   }
 
   // Remove hooks
-  const hooks = getHooks(resolvedGitDir)
+  const hooks = getHooks(gitDir)
   removeHooks(hooks)
 
-  console.log('husky > done')
+  console.log('husky > Done')
 }

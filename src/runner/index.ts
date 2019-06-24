@@ -2,21 +2,27 @@ import execa from 'execa'
 import getStdin from 'get-stdin'
 import path from 'path'
 import readPkg from 'read-pkg'
+import debug from '../debug'
 import getConf from '../getConf'
 
-export interface IEnv extends NodeJS.ProcessEnv {
+export interface Env extends NodeJS.ProcessEnv {
   HUSKY_GIT_STDIN?: string
   HUSKY_GIT_PARAMS?: string
 }
 
 /**
- * @param argv - process.argv
+ * @param {array} argv - process.argv
+ * @param {promise} getStdinFn - used for mocking only
  */
 export default async function run(
   [, scriptPath, hookName = '', HUSKY_GIT_PARAMS]: string[],
-  getStdinFn: () => Promise<string> = getStdin // Used for mocking
+  getStdinFn: () => Promise<string> = getStdin
 ): Promise<number> {
   const cwd = path.resolve(scriptPath.split('node_modules')[0])
+
+  // Debug
+  debug(`CWD=${cwd}`)
+
   // In some cases, package.json may not exist
   // For example, when switching to gh-page branch
   let pkg
@@ -27,6 +33,7 @@ export default async function run(
       throw err
     }
   }
+
   const config = getConf(cwd)
 
   const command: string | undefined =
@@ -37,7 +44,7 @@ export default async function run(
 
   // Run command
   try {
-    const env: IEnv = {}
+    const env: Env = {}
 
     if (HUSKY_GIT_PARAMS) {
       env.HUSKY_GIT_PARAMS = HUSKY_GIT_PARAMS
@@ -48,6 +55,7 @@ export default async function run(
         hookName
       )
     ) {
+      // Wait for stdin
       env.HUSKY_GIT_STDIN = await getStdinFn()
     }
 

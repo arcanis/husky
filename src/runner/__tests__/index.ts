@@ -7,21 +7,23 @@ import index from '../'
 
 let spy: jest.SpyInstance
 
-function getScriptPath(dir: string) {
+function getScriptPath(dir: string): string {
   return path.join(dir, 'node_modules/husky/runner/index.js')
 }
 
-describe('run', () => {
-  beforeEach(() => {
+describe('run', (): void => {
+  beforeEach((): void => {
     spy = jest.spyOn(execa, 'shellSync')
   })
 
-  afterEach(() => {
+  afterEach((): void => {
     spy.mockReset()
     spy.mockRestore()
   })
 
-  it('should run working command and return 0 status', async () => {
+  it('should run working command and return 0 status', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -44,7 +46,9 @@ describe('run', () => {
     expect(status).toBe(0)
   })
 
-  it('should run working command and return 0 status when husky is installed in a sub directory', async () => {
+  it('should run working command and return 0 status when husky is installed in a sub directory', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
     const subDir = path.join(dir, 'A/B')
     mkdirp.sync(subDir)
@@ -71,7 +75,9 @@ describe('run', () => {
 
   // This shouldn't happen since the shell script checks for command existence
   // but in case there's a false positive, we're testing this also
-  it('should return 0 status if the command is undefined', async () => {
+  it('should return 0 status if the command is undefined', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -86,7 +92,9 @@ describe('run', () => {
     expect(status).toBe(0)
   })
 
-  it('should run failing command and return 1 status', async () => {
+  it('should run failing command and return 1 status', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -109,7 +117,9 @@ describe('run', () => {
     expect(status).toBe(2)
   })
 
-  it('should support old scripts but show a deprecated message', async () => {
+  it('should support old scripts but show a deprecated message', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -130,7 +140,9 @@ describe('run', () => {
     expect(status).toBe(0)
   })
 
-  it('should set HUSKY_GIT_STDIN env for some hooks', async () => {
+  it('should set HUSKY_GIT_STDIN env for some hooks', async (): Promise<
+    void
+  > => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -144,8 +156,9 @@ describe('run', () => {
       })
     )
 
-    const status = await index(['', getScriptPath(dir), 'pre-push'], () =>
-      Promise.resolve('foo')
+    const status = await index(
+      ['', getScriptPath(dir), 'pre-push'],
+      (): Promise<string> => Promise.resolve('foo')
     )
     expect(execa.shellSync).toHaveBeenCalledWith('echo success', {
       cwd: dir,
@@ -157,7 +170,7 @@ describe('run', () => {
     expect(status).toBe(0)
   })
 
-  it('should set HUSKY_GIT_PARAMS', async () => {
+  it('should set HUSKY_GIT_PARAMS', async (): Promise<void> => {
     const dir = tempy.directory()
 
     fs.writeFileSync(
@@ -171,7 +184,7 @@ describe('run', () => {
       })
     )
 
-    // commit-msg takes one parameter from git
+    // 'commit-msg' takes one parameter from git
     const status = await index([
       '',
       getScriptPath(dir),
@@ -188,10 +201,11 @@ describe('run', () => {
     expect(status).toBe(0)
   })
 
-  it("should not throw if there's no package.json", async () => {
+  it("should not throw if there's no package.json", async (): Promise<void> => {
     const dir = tempy.directory()
-    await index(['', getScriptPath(dir), 'pre-push'], () =>
-      Promise.resolve('foo')
+    await index(
+      ['', getScriptPath(dir), 'pre-push'],
+      (): Promise<string> => Promise.resolve('foo')
     )
   })
 })

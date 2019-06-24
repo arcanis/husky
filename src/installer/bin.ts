@@ -1,11 +1,12 @@
 import isCI from 'is-ci'
 import path from 'path'
+import debug from '../debug'
 import { install, uninstall } from './'
+import gitRevParse from './gitRevParse'
 
-// Just for testing
-if (process.env.HUSKY_DEBUG === 'true') {
-  console.log(`husky:debug INIT_CWD=${process.env.INIT_CWD}`)
-}
+// Debug
+debug(`CWD=${process.env.CWD}`)
+debug(`INIT_CWD=${process.env.INIT_CWD}`)
 
 // Action can be "install" or "uninstall"
 // huskyDir is ONLY used in dev, don't use this arguments
@@ -13,13 +14,22 @@ const [, , action, huskyDir = path.join(__dirname, '../..')] = process.argv
 
 // Find Git dir
 try {
-  // Run installer
+  // Show un/install message
+  console.log(
+    'husky > %s git hooks',
+    action === 'install' ? 'Setting up' : 'Uninstalling'
+  )
+
+  // Get top level and git dir
+  const { topLevel, gitDir } = gitRevParse()
+
+  // Install or uninstall
   if (action === 'install') {
-    install(huskyDir, undefined, isCI)
+    install(topLevel, gitDir, huskyDir, isCI)
   } else {
-    uninstall(huskyDir)
+    uninstall(gitDir, huskyDir)
   }
 } catch (error) {
-  console.log(`husky > failed to ${action}`)
-  console.log(error.message)
+  console.log(error.message.trim())
+  console.log(`husky > Failed to ${action}`)
 }

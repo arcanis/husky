@@ -1,6 +1,25 @@
 # CHANGELOG
 
-## Unreleased
+## 2.5.0
+
+* Use more accurate git hooks directory resolution
+* Add `CWD` in debug messages
+* Reduce package size
+
+## 2.4.1
+
+* Fix husky crash on install/uninstall with very old Node versions
+
+## 2.4.0
+
+* Add `HUSKY_SKIP_HOOKS` to skip all hooks
+
+## 2.3.0
+
+* Make `HUSKY_DEBUG=1` effective like `HUSKY_DEBUG=true`
+* Refactor script to point to `run-node/run-node` rather than `.bin/run-node`
+
+## 2.2.0
 
 * Improve Git worktree support
 
@@ -22,7 +41,7 @@
 
 ## 1.3.0
 
-* Enable `stdin` if hook is running in a terminal 
+* Enable `stdin` if hook is running in a terminal
 
 ## 1.2.1
 
@@ -145,7 +164,7 @@ Huge thanks to all the Contributors and [Patreon Supporters](https://thanks.typi
 
 ## 1.0.0-rc.5
 
-* Auto migrate `yorkie` hooks 
+* Auto migrate `yorkie` hooks
 
 ## 1.0.0-rc.4
 
