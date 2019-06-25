@@ -1,6 +1,7 @@
 import execa from 'execa'
 import getStdin from 'get-stdin'
 import path from 'path'
+import pkgDir from 'pkg-dir'
 import readPkg from 'read-pkg'
 import debug from '../debug'
 import getConf from '../getConf'
@@ -18,9 +19,16 @@ export default async function run(
   [, scriptPath, hookName = '', HUSKY_GIT_PARAMS]: string[],
   getStdinFn: () => Promise<string> = getStdin
 ): Promise<number> {
-  const cwd = path.resolve(scriptPath.split('node_modules')[0])
+  // @ts-ignore
+  const pnpapi: any = process.versions.pnp ? require('pnpapi') : null;
+
+  // First directory containing user's package.json
+  const userPkgDir = pnpapi
+    ? pnpapi.getPackageInformation(pnpapi.topLevel).packageLocation
+    : pkgDir.sync(path.dirname(scriptPath));
 
   // Debug
+  const cwd = userPkgDir;
   debug(`CWD=${cwd}`)
 
   // In some cases, package.json may not exist

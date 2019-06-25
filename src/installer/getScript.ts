@@ -49,7 +49,6 @@ gitRoot="$(git rev-parse --show-toplevel)"
 gitParams="$*"
 
 debug() {
-<<<<<<< HEAD
   if [ "$\{HUSKY_DEBUG}" = "true" ] || [ "$\{HUSKY_DEBUG}" = "1" ]; then
     echo "husky:debug $1"
   fi
@@ -72,7 +71,7 @@ if [ "$\{HUSKY_SKIP_HOOKS}" = "true" ] || [ "$\{HUSKY_SKIP_HOOKS}" = "1" ]; then
   exit 0
 fi
 
-if [ "\${HUSKY_USE_YARN}" = "true" ]; then
+if [ "$\{HUSKY_USE_YARN}" = "true" ] || [ "$\{HUSKY_USE_YARN}" = "1" ]; then
   yarn husky $hookName "$gitParams"
 else
   ${
